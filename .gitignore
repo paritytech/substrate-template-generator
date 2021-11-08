@@ -1,0 +1,8 @@
+**/target/
+**/*.rs.bk
+*.swp
+**/._*
+**/.criterion/
+.vscode
+.local
+*.bin
