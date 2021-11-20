@@ -15,20 +15,23 @@ order of toml parsing items
 https://github.com/alexcrichton/toml-rs/blob/master/Cargo.toml#L33-L36
 
 ## Desired Features
-- [ ] add a table for non-semver version notes
-- [ ] add ability to set the repo to use
-	- [ ] set multilple (sub, polka ...) BUT we are only changing `path` deps, so this hsould not be an issue?
-- [ ] Integrate with Sacha's kitties thing to generate a new tempalte with name, author, otional added stuff...
+
+- [ ] TOML config file to run the generator as a bin (no need to build each time to use different settings)
+  - [ ] upstream `remote` repo and the local `path` to use.
+    - if git repo is at `path`, use it: checkout the requested branch/tag/rev
+      - first check it's remote matches, ir warn....panic? cli override
+    - pull from it's set remote (if any) to update
+    - if it does not, pull from the remote upstream `git` TOML field
+    - if no repo at `path`, use `remote` to clone depth =1 t specific requested branch/tag/rev
+    - `output` to use the `remote` explicitly in cargo files, al local path is likely not useful (can easily add new field allowing for this though)
 - [ ] preserve order of cargo files for formatting
-- [ ] optial via CLI
-	- [ ] testing pallet (builds things!!)
-	- [ ] build & retain build artifacts
-	- [ ] zip whole node to transport
+- [ ] optional via TOML:
+	- [ ] build & option to retain build artifacts
+	- [ ] testing pallet (keep & use build artifacts)
+	- [ ] zip whole node (and option build artifacts) to transport over the wire
 - [ ] option to bring in upstream lock file based on tag/branch or not.
-	- [ ] this will not be "right" but running a build, cargo will sort it out.
+	- [ ] this will not be "right" but running a build, cargo will sort it out?
 - [ ] Custom tweaks
-	- [ ] Remplace `ROC` with Unit in chain spec
-	- [ ] `RocLocation` to `RelayLocation` in runtime
-	- [ ] support_url to change to ...?
+	- [ ] `support_url` in cli command upstream to change to ...?
 	- [ ] Other custom bits?
-	- [ ] *issue: does this need to be the same for teleporting (common good with realy chain)*
+- [ ] CLI commands to use the embedded `config/...` TOML files by name, or to set a specific file to use you provide.
