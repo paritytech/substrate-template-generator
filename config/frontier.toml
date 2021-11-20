@@ -1,0 +1,31 @@
+# we target an upstream that has _relative links_ to only those in the repository. All others are set correctly there for further dependancies in the repo
+[upstream]
+# `repo` can be a local relative path to a dir with `./.git` object in it, or URL ending in `.git`.
+# Set the target branch OR tag OR rev (commit) you want to pull the template from
+path = "home/user/frontier"
+remote = "https://github.com/paritytech/frontier.git"
+branch = "master"
+template = "./template"
+
+[output.package]
+name = "my-frontier-node-template"
+# `version` defaults to use the same semver version as your upstream `Cargo.toml` project uses
+# you can override by setting here:
+# version = "0.1.0"
+authors = ["Anonymous"]
+description = "Template Genrated with https://github.com/paritytech/substrate-template-generator"
+license = "Unlicense"
+homepage = "https://substrate.io"
+repository = "https://github.com/paritytech/substrate-template-generator"
+edition = "2021"
+
+[output]
+path = "/home/user/my-frontier-node-template"
+overwrite = true # use rsync to merge file changes, or write into an empty dir
+update = {preserve-upstream-lock = true, cargo-update = true}
+build = false
+test = false
+git = { commit = false, message = "a new template has be generated and committed!"}
+zip = false
+
+
