@@ -14,6 +14,10 @@ https://docs.rs/git2/0.13.23/git2/struct.Reference.html#method.peel_to_tag
 order of toml parsing items
 https://github.com/alexcrichton/toml-rs/blob/master/Cargo.toml#L33-L36
 
+CI for checking upstream, once generated ideas:
+https://github.com/paritytech/substrate-archive/blob/master/.github/workflows/node-template.yml
+https://github.com/paritytech/substrate-archive/blob/master/bin/node-template-archive/Cargo.toml
+
 ## Desired Features
 
 - [ ] TOML config file to run the generator as a bin (no need to build each time to use different settings)
