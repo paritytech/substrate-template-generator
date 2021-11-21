@@ -1,4 +1,4 @@
-# we target an upstream that has _relative links_ to only those in the repository. All others are set correctly there for further dependancies in the repo
+# we target an upstream that has _relative links_ to only those in the repository. All others are set correctly there for further dependenciesGenerated in the repo
 [upstream]
 # `repo` can be a local relative path to a dir with `./.git` object in it, or URL ending in `.git`.
 # Set the target branch OR tag OR rev (commit) you want to pull the template from
@@ -13,15 +13,16 @@ name = "my-frontier-node-template"
 # you can override by setting here:
 # version = "0.1.0"
 authors = ["Anonymous"]
-description = "Template Genrated with https://github.com/paritytech/substrate-template-generator"
+description = "Template Generated with https://github.com/paritytech/substrate-template-generator"
 license = "Unlicense"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/substrate-template-generator"
 edition = "2021"
 
+# All options here are superseded by any CLI flags
 [output]
 path = "/home/user/my-frontier-node-template"
-overwrite = true # use rsync to merge file changes, or write into an empty dir
+overwrite = false
 update = {preserve-upstream-lock = true, cargo-update = true}
 build = false
 test = false

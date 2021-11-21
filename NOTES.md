@@ -2,16 +2,16 @@
 
 ## Notepad
 
-basti downer tool for replacing dependence?
+Use this tool for replacing dependence?
 https://github.com/bkchr/diener
 
-SEE HERE FOR RECENT CHANGES:
+SEE HERE FOR RECENT CHANGES to upstream template generator tooling:
 https://github.com/paritytech/substrate/pull/9461/files
 
 Option to set commit, tag or branch as what is in cargo
 https://docs.rs/git2/0.13.23/git2/struct.Reference.html#method.peel_to_tag
 
-order of toml parsing items
+Order of toml parsing items
 https://github.com/alexcrichton/toml-rs/blob/master/Cargo.toml#L33-L36
 
 CI for checking upstream, once generated ideas:
@@ -33,6 +33,8 @@ https://github.com/paritytech/substrate-archive/blob/master/bin/node-template-ar
 	- [ ] build & option to retain build artifacts
 	- [ ] testing pallet (keep & use build artifacts)
 	- [ ] zip whole node (and option build artifacts) to transport over the wire
+- [ ] optional via CLI:
+	- [ ] overwrite an exiting output folder using `rsync` or similar (with an *explicit* flag to do so, default will error out before anything else starts if dir is not empty)
 - [ ] option to bring in upstream lock file based on tag/branch or not.
 	- [ ] this will not be "right" but running a build, cargo will sort it out?
 - [ ] Custom tweaks
