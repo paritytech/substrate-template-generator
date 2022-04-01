@@ -16,7 +16,7 @@ use std::{
 	path::{Path, PathBuf},
 	process::Command,
 };
-use structopt::StructOpt;
+use clap::Parser;
 use tar;
 use tempfile;
 use toml;
@@ -25,19 +25,19 @@ use toml;
 // cargo dependency items with.
 const PROJECT_GIT_URL: &str = "https://github.com/paritytech/substrate.git";
 
-#[derive(StructOpt)]
+#[derive(Parser)]
 struct Options {
 	/// The relative path to the `node-template` source.
-	#[structopt(parse(from_os_str))]
+	#[clap(parse(from_os_str))]
 	node_template: PathBuf,
 	/// The relative path where to output the generated `tar.gz` file.
-	#[structopt(parse(from_os_str))]
+	#[clap(parse(from_os_str))]
 	output: PathBuf,
 	/// Keep config files of the parent project including `.rustfmt`. 
-	#[structopt(short,long)]
+	#[clap(short,long)]
 	keep_config: bool,
 	/// Check and test the stand alone node.  
-	#[structopt(short,long)]
+	#[clap(short,long)]
 	test: bool,
 }
 
@@ -216,7 +216,7 @@ fn check_and_test(path: &Path, cargo_tomls: &[PathBuf]) {
 }
 
 fn main() {
-	let options = Options::from_args();
+	let options = Options::parse();
 
 	let build_dir = tempfile::tempdir().expect("Creates temp build dir");
 
