@@ -2,7 +2,7 @@
 [upstream]
 # `repo` can be a local relative path to a dir with `./.git` object in it, or URL ending in `.git`.
 # Set the target branch OR tag OR rev (commit) you want to pull the template from
-path = "home/user/substrate"
+path = "/home/dan/git/substrate"
 remote = "https://github.com/paritytech/substrate.git"
 branch = "master"
 template = "./bin/node-template"
@@ -21,7 +21,7 @@ edition = "2021"
 
 # All options here are superseded by any CLI flags
 [output]
-path = "/home/user/my-substrate-node-template"
+path = "/tmp/template"
 overwrite = false
 update = {preserve-upstream-lock = true, cargo-update = true}
 build = false
