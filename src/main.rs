@@ -106,6 +106,10 @@ fn copy_node_template(config: &Config) {
 	let mut abs_template_path = config.upstream.source_path.clone();
 	abs_template_path.push(&config.upstream.relative_template_path);
 
+	// Only create the folder if it doesn't exist.
+	// Overwrite files within this dir if config sets this latter.
+	dir::create(&config.output.path, false);
+
 	dir::copy(abs_template_path, &config.output.path , &options).expect("Copies node-template to output dir");
 }
 

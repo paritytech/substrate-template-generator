@@ -5,11 +5,11 @@
 # branch or tag or ref, BUT they conflict! must choose one
 git_info = { url = "https://github.com/paritytech/substrate.git",  selector = "branch", name = "master" }
 source_path = "./test/substrate"
-relative_template_path = "./bin/node-template"
+relative_template_path = "./bin/node-template/"
 
 # All options here are superseded by any CLI flags
 [output]
-path = "./test/output"
+path = "./test/node-template/"
 overwrite = true
 build = false
 test = false
