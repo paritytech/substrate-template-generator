@@ -102,6 +102,7 @@ fn find_cargo_tomls(path: &PathBuf) -> Vec<PathBuf> {
 fn copy_node_template(config: &Config) {
 	let mut options = CopyOptions::new();
 	options.overwrite = config.output.overwrite;
+	options.content_only =true;
 
 	let mut abs_template_path = config.upstream.source_path.clone();
 	abs_template_path.push(&config.upstream.relative_template_path);

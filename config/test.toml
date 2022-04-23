@@ -4,12 +4,15 @@
 # Set the target branch OR tag OR rev (commit) you want to pull the template from
 # branch or tag or ref, BUT they conflict! must choose one
 git_info = { url = "https://github.com/paritytech/substrate.git",  selector = "branch", name = "master" }
-source_path = "./test/substrate"
-relative_template_path = "./bin/node-template/"
+# Must be an ABSOLUTE path.
+source_path = "/home/user/test/substrate"
+# Must be an relative path from the absolute above.
+relative_template_path = "bin/node-template/"
 
 # All options here are superseded by any CLI flags
 [output]
-path = "./test/node-template/"
+# Must be an ABSOLUTE path.
+path = "/home/user/test/node-template/"
 overwrite = true
 build = false
 test = false
