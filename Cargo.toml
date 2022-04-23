@@ -9,11 +9,10 @@ license = "GPL-3.0"
 toml = "0.5.4"
 tar = "0.4"
 glob = "0.2"
-structopt = "0.3"
-tempfile = "3"
+clap = { version = "3.0", features = ["derive"] }
 fs_extra = "1"
 git2 = "0.8"
-flate2 = "1.0"
+serde = { version = "1.0.136", features = ["derive"] }
 
 [workspace]
 

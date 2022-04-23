@@ -2,10 +2,21 @@
 [upstream]
 # `repo` can be a local relative path to a dir with `./.git` object in it, or URL ending in `.git`.
 # Set the target branch OR tag OR rev (commit) you want to pull the template from
-path = "/home/dan/git/substrate"
-remote = "https://github.com/paritytech/substrate.git"
-branch = "master"
-template = "./bin/node-template"
+# branch or tag or ref, BUT they conflict! must choose one
+git_info = { url = "https://github.com/paritytech/substrate.git",  selector = "branch", name = "master" }
+# Must be an ABSOLUTE path.
+source_path = "/home/user/test/substrate"
+# Must be an relative path from the absolute above.
+relative_template_path = "bin/node-template/"
+
+# All options here are superseded by any CLI flags
+[output]
+# Must be an ABSOLUTE path.
+path = "/home/user/test/node-template/"
+overwrite = true
+build = false
+test = false
+zip = false
 
 [output.package]
 name = "my-substrate-node-template"
@@ -18,15 +29,3 @@ license = "Unlicense"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/substrate-template-generator"
 edition = "2021"
-
-# All options here are superseded by any CLI flags
-[output]
-path = "/tmp/template"
-overwrite = false
-update = {preserve-upstream-lock = true, cargo-update = true}
-build = false
-test = false
-git = { commit = false, message = "a new template has be generated and committed!"}
-zip = false
-
-

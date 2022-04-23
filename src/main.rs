@@ -5,45 +5,83 @@
 //! any custom chain that intends for users to build off of as a base template included in their
 //! source.
 
-use flate2::{write::GzEncoder, Compression};
 use fs_extra::dir::{self, CopyOptions};
 use git2;
 use glob;
 use std::{
 	collections::HashMap,
+	env,
 	fs::{self, File, OpenOptions},
 	io::{Read, Write},
 	path::{Path, PathBuf},
 	process::Command,
 };
-use structopt::StructOpt;
-use tar;
-use tempfile;
+use serde::Deserialize;
 use toml;
 
 // Set the public repository where the stand-alone template can replace local
 // cargo dependency items with.
 const PROJECT_GIT_URL: &str = "https://github.com/paritytech/substrate.git";
 
-#[derive(StructOpt)]
-struct Options {
-	/// The relative path to the `node-template` source.
-	#[structopt(parse(from_os_str))]
-	node_template: PathBuf,
-	/// The relative path where to output the generated `tar.gz` file.
-	#[structopt(parse(from_os_str))]
-	output: PathBuf,
-	/// Keep config files of the parent project including `.rustfmt`. 
-	#[structopt(short,long)]
-	keep_config: bool,
-	/// Check and test the stand alone node.  
-	#[structopt(short,long)]
-	test: bool,
+/// Store a deserialized, parsed, configuration TOML file
+#[derive(Deserialize)]
+struct Config {
+    upstream: Upstream,
+    output: Output,
 }
 
+/// Deserialized, parsed, upstream template package information.
+#[derive(Deserialize)]
+struct Upstream {
+    source_path: PathBuf,
+    git_info: GitInfo,
+    relative_template_path: PathBuf,
+}
+
+/// Deserialized, parsed, git target info
+#[derive(Deserialize)]
+struct GitInfo {
+	url: String,
+    selector: GitType,
+    name: String,
+}
+
+/// Git target specification for branch OR tag OR rev
+#[derive(Deserialize)]
+#[allow(non_camel_case_types)]
+enum GitType {
+	branch,
+	tag,
+	rev,
+}
+
+/// Deserialized, parsed, upstream template package information.
+#[derive(Deserialize)]
+struct Output {
+	path: PathBuf,
+	overwrite: bool,
+	build: bool,
+	test: bool,
+	zip: bool,
+	package: Package,
+}
+
+/// Deserialized, parsed, `Cargo.toml` template package information to be used in the generated template.
+#[derive(Deserialize)]
+struct Package {
+	name: String,
+	authors: Vec<String>,
+	description: String,
+	license: String,
+	homepage: String,
+	repository: String,
+	edition: String,
+}
+
+
 /// Find all `Cargo.toml` files in the given path.
-fn find_cargo_tomls(path: PathBuf) -> Vec<PathBuf> {
-	let path = format!("{}/**/*.toml", path.display());
+fn find_cargo_tomls(path: &PathBuf) -> Vec<PathBuf> {
+	let path = format!("{}/**/Cargo.toml", path.display());
 
 	let glob = glob::glob(&path).expect("Generates globbing pattern");
 
@@ -60,10 +98,20 @@ fn find_cargo_tomls(path: PathBuf) -> Vec<PathBuf> {
 	result
 }
 
-/// Copy the `node-template` to the given path.
-fn copy_node_template(node_template: &Path, dest_path: &Path) {
-	let options = CopyOptions::new();
-	dir::copy(node_template, dest_path, &options).expect("Copies node-template to tmp dir");
+/// Copy the template specified to the given output path.
+fn copy_node_template(config: &Config) {
+	let mut options = CopyOptions::new();
+	options.overwrite = config.output.overwrite;
+	options.content_only =true;
+
+	let mut abs_template_path = config.upstream.source_path.clone();
+	abs_template_path.push(&config.upstream.relative_template_path);
+
+	// Only create the folder if it doesn't exist.
+	// Overwrite files within this dir if config sets this latter.
+	dir::create(&config.output.path, false).expect("New node-template output dir, if doesn't exist");
+
+	dir::copy(abs_template_path, &config.output.path , &options).expect("Copies node-template to output dir");
 }
 
 /// Gets the latest commit id of the repository given by `path`.
@@ -216,26 +264,29 @@ fn check_and_test(path: &Path, cargo_tomls: &[PathBuf]) {
 }
 
 fn main() {
-	let options = Options::from_args();
+    let args: Vec<String> = env::args().collect();
 
-	let build_dir = tempfile::tempdir().expect("Creates temp build dir");
+	if args.len() != 2{
+		println!("Please specify a config file");
+		return 
+	}
 
-	let node_template_source_folder = options
-		.node_template
-		.canonicalize()
-		.expect("Node template path exists")
-		.file_name()
-		.expect("Node template folder is last element of path")
-		.to_owned();
+    let config_file = &args[1];
 
-	// The path to the node-template in the build dir.
-	let node_template_generated_folder = build_dir.path().join(node_template_source_folder);
+    println!("Using config file {}", config_file);
 
-	copy_node_template(&options.node_template, build_dir.path());
-	let mut cargo_tomls = find_cargo_tomls(build_dir.path().to_owned());
+	let contents = fs::read_to_string(config_file)
+		.expect("Something went wrong reading the TOML config_file... missing file?");
 
-	let commit_id = get_git_commit_id(&options.node_template);
-	let top_level_cargo_toml_path = node_template_generated_folder.join("Cargo.toml");
+	let config: Config = toml::from_str(&contents)
+		.expect("Something went wrong reading the TOML config_file... not a TOML file?");
+
+	copy_node_template(&config);
+
+	let mut cargo_tomls = find_cargo_tomls(&config.output.path);
+
+	let commit_id = get_git_commit_id(&config.upstream.source_path);
+	let top_level_cargo_toml_path = &config.output.path.join("Cargo.toml");
 
 	// Check if top level Cargo.toml exists. If not, create one in the destination
 	if !cargo_tomls.contains(&top_level_cargo_toml_path) {
@@ -255,36 +306,26 @@ fn main() {
 		replace_path_dependencies_with_git(&t, &commit_id, &mut cargo_toml);
 
 		// Check if this is the top level `Cargo.toml`, as this requires some special treatments.
-		if top_level_cargo_toml_path == *t {
+		if top_level_cargo_toml_path == t {
 			// All workspace member `Cargo.toml` file paths.
 			let workspace_members =
-				cargo_tomls.iter().filter(|p| **p != top_level_cargo_toml_path).collect();
+				cargo_tomls.iter().filter(|p| *p != top_level_cargo_toml_path).collect();
 
-			update_top_level_cargo_toml(&mut cargo_toml, workspace_members, &node_template_generated_folder);
+			update_top_level_cargo_toml(&mut cargo_toml, workspace_members, &config.output.path);
 		}
 
 		write_cargo_toml(&t, cargo_toml);
 	});
 
-	if options.keep_config {
-		// adding root rustfmt to node template build path
-		let node_template_rustfmt_toml_path = node_template_generated_folder.join("rustfmt.toml");
-		let root_rustfmt_toml = &options.node_template.join("../../rustfmt.toml");
-		if root_rustfmt_toml.exists() {
-			fs::copy(&root_rustfmt_toml, &node_template_rustfmt_toml_path)
-				.expect("Copying rustfmt.toml.");
-		}
+	// adding root rustfmt to node template build path
+	let node_template_rustfmt_toml_path = &config.output.path.join("rustfmt.toml");
+	let root_rustfmt_toml = &config.upstream.source_path.join("rustfmt.toml");
+	if root_rustfmt_toml.exists() {
+		fs::copy(&root_rustfmt_toml, &node_template_rustfmt_toml_path)
+			.expect("Copying rustfmt.toml.");
 	}
 
-	if options.test {
-		check_and_test(&node_template_generated_folder, &cargo_tomls);
+	if config.output.test {
+		check_and_test(&config.output.path, &cargo_tomls);
 	}
-
-	let output = GzEncoder::new(
-		File::create(&options.output).expect("Creates output file"),
-		Compression::default(),
-	);
-	let mut tar = tar::Builder::new(output);
-	tar.append_dir_all("substrate-node-template", node_template_generated_folder)
-		.expect("Writes substrate-node-template archive");
 }
