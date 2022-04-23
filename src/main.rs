@@ -109,7 +109,7 @@ fn copy_node_template(config: &Config) {
 
 	// Only create the folder if it doesn't exist.
 	// Overwrite files within this dir if config sets this latter.
-	dir::create(&config.output.path, false);
+	dir::create(&config.output.path, false).expect("New node-template output dir, if doesn't exist");
 
 	dir::copy(abs_template_path, &config.output.path , &options).expect("Copies node-template to output dir");
 }
