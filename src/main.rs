@@ -18,7 +18,6 @@ use std::{
 };
 use serde::Deserialize;
 use toml;
-// use toml;
 
 // Set the public repository where the stand-alone template can replace local
 // cargo dependency items with.
@@ -28,22 +27,48 @@ const PROJECT_GIT_URL: &str = "https://github.com/paritytech/substrate.git";
 #[derive(Deserialize)]
 struct Config {
     upstream: Upstream,
-    output_package: OutputPackage,
     output: Output,
 }
 
 /// Deserialized, parsed, upstream template package information.
 #[derive(Deserialize)]
 struct Upstream {
-    path: PathBuf,
-    remote: String,
-    branch: String,
-    template: PathBuf,
+    source_path: PathBuf,
+    git_info: GitInfo,
+    relative_template_path: PathBuf,
+}
+
+/// Deserialized, parsed, git target info
+#[derive(Deserialize)]
+struct GitInfo {
+	url: String,
+    selector: GitType,
+    name: String,
+}
+
+/// Git target specification for branch OR tag OR rev
+#[derive(Deserialize)]
+#[allow(non_camel_case_types)]
+enum GitType {
+	branch,
+	tag,
+	rev,
+}
+
+/// Deserialized, parsed, upstream template package information.
+#[derive(Deserialize)]
+struct Output {
+	path: PathBuf,
+	overwrite: bool,
+	build: bool,
+	test: bool,
+	zip: bool,
+	package: Package,
 }
 
 /// Deserialized, parsed, `Cargo.toml` template package information to be used in the generated template.
 #[derive(Deserialize)]
-struct OutputPackage {
+struct Package {
 	name: String,
 	authors: Vec<String>,
 	description: String,
@@ -53,29 +78,6 @@ struct OutputPackage {
 	edition: String,
 }
 
-/// Deserialized, parsed, upstream template package information.
-#[derive(Deserialize)]
-struct Output {
-	path: PathBuf,
-	overwrite: bool,
-	update: Update,
-	build: bool,
-	test: bool,
-	git: Git,
-	zip: bool,
-}
-
-#[derive(Deserialize)]
-struct Update {
-	preserve_upstream_lock: bool,
-	cargo_update: bool,
-}
-
-#[derive(Deserialize)]
-struct Git {
-	commit: bool,
-	message: String,
-}
 
 /// Find all `Cargo.toml` files in the given path.
 fn find_cargo_tomls(path: &PathBuf) -> Vec<PathBuf> {
@@ -97,9 +99,14 @@ fn find_cargo_tomls(path: &PathBuf) -> Vec<PathBuf> {
 }
 
 /// Copy the template specified to the given output path.
-fn copy_node_template(upstream: &Path, output: &Path) {
-	let options = CopyOptions::new();
-	dir::copy(upstream, output, &options).expect("Copies node-template to output dir");
+fn copy_node_template(config: &Config) {
+	let mut options = CopyOptions::new();
+	options.overwrite = config.output.overwrite;
+
+	let mut abs_template_path = config.upstream.source_path.clone();
+	abs_template_path.push(&config.upstream.relative_template_path);
+
+	dir::copy(abs_template_path, &config.output.path , &options).expect("Copies node-template to output dir");
 }
 
 /// Gets the latest commit id of the repository given by `path`.
@@ -254,6 +261,11 @@ fn check_and_test(path: &Path, cargo_tomls: &[PathBuf]) {
 fn main() {
     let args: Vec<String> = env::args().collect();
 
+	if args.len() != 2{
+		println!("Please specify a config file");
+		return 
+	}
+
     let config_file = &args[1];
 
     println!("Using config file {}", config_file);
@@ -264,11 +276,11 @@ fn main() {
 	let config: Config = toml::from_str(&contents)
 		.expect("Something went wrong reading the TOML config_file... not a TOML file?");
 
-	copy_node_template(&config.upstream.path, &config.output.path);
+	copy_node_template(&config);
 
 	let mut cargo_tomls = find_cargo_tomls(&config.output.path);
 
-	let commit_id = get_git_commit_id(&config.upstream.path);
+	let commit_id = get_git_commit_id(&config.upstream.source_path);
 	let top_level_cargo_toml_path = &config.output.path.join("Cargo.toml");
 
 	// Check if top level Cargo.toml exists. If not, create one in the destination
@@ -302,7 +314,7 @@ fn main() {
 
 	// adding root rustfmt to node template build path
 	let node_template_rustfmt_toml_path = &config.output.path.join("rustfmt.toml");
-	let root_rustfmt_toml = &config.upstream.path.join("rustfmt.toml");
+	let root_rustfmt_toml = &config.upstream.source_path.join("rustfmt.toml");
 	if root_rustfmt_toml.exists() {
 		fs::copy(&root_rustfmt_toml, &node_template_rustfmt_toml_path)
 			.expect("Copying rustfmt.toml.");

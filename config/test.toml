@@ -1,0 +1,28 @@
+# we target an upstream that has _relative links_ to only those in the repository. All others are set correctly there for further dependenciesGenerated in the repo
+[upstream]
+# `repo` can be a local relative path to a dir with `./.git` object in it, or URL ending in `.git`.
+# Set the target branch OR tag OR rev (commit) you want to pull the template from
+# branch or tag or ref, BUT they conflict! must choose one
+git_info = { url = "https://github.com/paritytech/substrate.git",  selector = "branch", name = "master" }
+source_path = "./test/substrate"
+relative_template_path = "./bin/node-template"
+
+# All options here are superseded by any CLI flags
+[output]
+path = "./test/output"
+overwrite = true
+build = false
+test = false
+zip = false
+
+[output.package]
+name = "my-substrate-node-template"
+# `version` defaults to use the same semver version as your upstream `Cargo.toml` project uses
+# you can override by setting here:
+# version = "0.1.0"
+authors = ["Anonymous"]
+description = "Template Generated with https://github.com/paritytech/substrate-template-generator"
+license = "Unlicense"
+homepage = "https://substrate.io"
+repository = "https://github.com/paritytech/substrate-template-generator"
+edition = "2021"
