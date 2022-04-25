@@ -18,6 +18,8 @@ use std::{
 };
 use serde::Deserialize;
 use toml;
+use toml_edit::{Document, InlineTable, Value};
+use env_logger::Env;
 
 // Set the public repository where the stand-alone template can replace local
 // cargo dependency items with.
@@ -229,7 +231,28 @@ fn update_top_level_cargo_toml(
 fn write_cargo_toml(path: &Path, cargo_toml: CargoToml) {
 	let content = toml::to_string_pretty(&cargo_toml).expect("Creates `Cargo.toml`");
 	let mut file = File::create(path).expect(&format!("Creates `{}`.", path.display()));
-	write!(file, "{}", content).expect("Writes `Cargo.toml`");
+	
+	//parse toml string into toml_edit library
+	let mut toml_doc = content.parse::<Document>().expect("invalid doc");
+
+	//convert all dependency dot tables to inline tables ( { path="foo" } )
+	toml_doc
+	.clone()
+	.iter()
+	// filter out everything that is not a dependency table
+	.filter(|(k, _)| k.contains("dependencies"))
+	.filter_map(|(k, v)| v.as_table().map(|t| (k, t)))
+	.for_each(|(k, t)| {
+		t.iter()
+		.for_each(|v| {
+			//save the table and convert it to an inline_table
+			let table = toml_doc[k][v.0].clone().into_value().unwrap();
+			//save table as inline table
+			toml_doc[k][v.0] = toml_edit::value(table);
+		})
+	});
+
+	write!(file, "{}", toml_doc.to_string()).expect("Writes `Cargo.toml`");
 }
 
 /// Build and test the generated node-template
