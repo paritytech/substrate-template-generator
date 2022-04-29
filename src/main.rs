@@ -49,7 +49,7 @@ struct GitInfo {
 }
 
 /// Git target specification for branch OR tag OR rev
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[allow(non_camel_case_types)]
 enum GitType {
 	branch,
@@ -98,6 +98,46 @@ fn find_cargo_tomls(path: &PathBuf) -> Vec<PathBuf> {
 	}
 
 	result
+}
+
+/// Clones the git repo from config file's `git_info.url` into
+/// `source_path`
+fn clone_repo(config: &Config) {
+	let git_path = config.upstream.git_info.url.clone();
+	let local_path = config.upstream.source_path.clone();
+
+	let repo = match git2::Repository::clone(&git_path, local_path) {
+		Ok(repo) => repo,
+		Err(e) => panic!("failed to clone: {}", e),
+	};
+}
+
+/// pulls and checks out the git repo at `local_path`.
+fn git_pull(config: &Config) {
+	// git2 library does not have a straightforward way to pull,
+	// so directly using the git command to pull is an easy workaround.
+
+	// the checkout type (branch, rev, tag)
+	let git_selector = config.upstream.git_info.selector.clone();
+	// the selector name (i.e. "master", or "v1.0.4", etc.)
+	let git_selector_name = config.upstream.git_info.name.clone();
+	let local_path = config.upstream.source_path.clone();
+
+	//pull the git repository at `local_path`
+	assert!(Command::new("git")
+		.args(&["pull"])
+		.current_dir(&local_path)
+		.status()
+		.expect("pulls git repo")
+		.success());
+
+	//git checkout based on branch or rev or tag
+	assert!(Command::new("git")
+		.args(&["checkout", &git_selector_name[..]]) // convert String -> slice of &str
+		.current_dir(&local_path)
+		.status()
+		.expect("checkouts the branch | rev | tag")
+		.success());
 }
 
 /// Copy the template specified to the given output path.
