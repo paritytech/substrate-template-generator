@@ -11,7 +11,7 @@ tar = "0.4"
 glob = "0.2"
 clap = { version = "3.0", features = ["derive"] }
 fs_extra = "1"
-git2 = "0.8"
+git2 = "0.16"
 serde = { version = "1.0.136", features = ["derive"] }
 
 [workspace]
